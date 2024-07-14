@@ -78,7 +78,9 @@ export const login = asyncHandler(async (req, res) => {
 	const user = await User.findOne({
 		$or: [{ username }, { email }],
 	});
-
+	if(!user){
+		throw new APIError(400, "User not found");
+	}
 	const isPasswordCorrect = await user.isPasswordCorrect(password);
 
 	if (!isPasswordCorrect || !user) {

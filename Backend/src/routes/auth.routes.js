@@ -2,7 +2,7 @@ import express from "express";
 import { getCurrentUser, login, logout, signup } from "../controllers/auth.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { authenticateUser } from "../middlewares/authenticateUser.middleware.js";
-import { get } from "mongoose";
+
 
 const router = express.Router();
 

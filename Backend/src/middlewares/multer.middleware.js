@@ -11,3 +11,16 @@ const storage = multer.diskStorage({
 });
 
 export const upload = multer({ storage: storage });
+export const uploadFunction = async(req,res,next) => {
+	upload.fields([
+		{
+			name: "profileImg",
+			maxCount: 1,
+		},
+		{
+			name: "coverImg",
+			maxCount: 1,
+		},
+	])
+	next();
+}
