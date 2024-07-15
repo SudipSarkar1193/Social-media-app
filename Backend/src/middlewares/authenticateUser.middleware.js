@@ -21,10 +21,11 @@ export const authenticateUser = asyncHandler(async (req, res, next) => {
 		throw new APIError(401, "Unauthorized Request");
 	}
 
-	const user = await User.findById(verifiedToken._id);
+	const user = await User.findById(verifiedToken._id).select("_id username email");
     if(!user){
         throw new APIError(404, "User not found."); 
     }
 	req.user = user;
+	console.log("req.user",req.user)
 	next();
 });

@@ -15,6 +15,7 @@ router.post("/follow/:id", authenticateUser, followAndUnfollow);
 router.get("/suggestions", authenticateUser, getSuggestedUsers);
 router.post(
 	"/update",
+	authenticateUser,
 	upload.fields([
 		{
 			name: "profileImg",
@@ -25,7 +26,6 @@ router.post(
 			maxCount: 1,
 		},
 	]),
-	authenticateUser,
 	updateUser
 );
 

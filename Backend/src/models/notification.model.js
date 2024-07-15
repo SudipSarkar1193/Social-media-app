@@ -19,7 +19,11 @@ const notiSchema = new mongoose.Schema({
     read:{
         type:Boolean,
         default:false
-    }
+    },
+	text:{
+		type:String,
+        default:""
+	}
 },{timestamps:true});
 
 export const Notification = new mongoose.model("Notification", notiSchema);

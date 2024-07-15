@@ -15,8 +15,6 @@ const generateAccessAndRefreshToken = async (user) => {
 export const signup = asyncHandler(async (req, res) => {
 	const { fullName, username, email, password } = req.body;
 
-	console.log(fullName, username, email, password, "\n");
-
 	if (
 		[fullName, username, email, password].some(
 			(fld) => fld == null || fld.trim() === ""
@@ -47,20 +45,27 @@ export const signup = asyncHandler(async (req, res) => {
 
 	// console.log("req.files", req.files);
 
-	const profileImgLocalPath = req.files?.profileImg[0]?.path;
+	let profileImgLocalPath, coverImgLocalPath;
+	coverImgLocalPath = profileImgLocalPath = false;
+	if (Object.keys(req.files).length > 0) {
+		profileImgLocalPath = req.files?.profileImg[0]?.path;
 
-	const coverImgLocalPath = req.files?.coverImg[0]?.path;
-
-	const profileImg = await uploadOnCloudinary(profileImgLocalPath);
-	const coverImg = await uploadOnCloudinary(coverImgLocalPath);
+		coverImgLocalPath = req.files?.coverImg[0]?.path;
+	}
+	let profileImg = null 
+	let coverImg = null;
+	if (profileImgLocalPath)
+		profileImg = await uploadOnCloudinary(profileImgLocalPath);
+	if (coverImgLocalPath)
+		coverImg = await uploadOnCloudinary(coverImgLocalPath);
 
 	const newUser = await User.create({
 		fullName,
 		username,
 		email,
 		password,
-		profileImg: profileImg.url,
-		coverImg: coverImg.url,
+		profileImg: profileImg?.url || null,
+		coverImg: coverImg?.url || null,
 	});
 
 	const resUser = await User.findById(newUser._id).select(
@@ -78,7 +83,7 @@ export const login = asyncHandler(async (req, res) => {
 	const user = await User.findOne({
 		$or: [{ username }, { email }],
 	});
-	if(!user){
+	if (!user) {
 		throw new APIError(400, "User not found");
 	}
 	const isPasswordCorrect = await user.isPasswordCorrect(password);
