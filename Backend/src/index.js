@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import authRoute from "./routes/auth.routes.js";
 import userRoute from "./routes/user.routes.js";
 import postRoute from "./routes/post.routes.js";
+import notificationRoute from "./routes/notification.routes.js";
 import { connectDB } from "./db/connect.db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -31,6 +32,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/posts", postRoute);
+app.use("/api/v1/notification", notificationRoute);
 
 app.on("error", (err) => {
 	console.log("ERROR:", err);
