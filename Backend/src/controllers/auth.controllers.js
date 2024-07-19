@@ -24,6 +24,14 @@ export const signup = asyncHandler(async (req, res) => {
 	}
 
 	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	const regex = /^[a-zA-Z0-9_]+$/;
+
+	if (!regex.test(username)) {
+		throw new APIError(
+			400,
+			" Only letters, numbers, and underscores are allowed"
+		);
+	}
 
 	if (!emailRegex.test(email)) {
 		throw new APIError(400, "Invalid Email format");
@@ -45,27 +53,27 @@ export const signup = asyncHandler(async (req, res) => {
 
 	// console.log("req.files", req.files);
 
-	let profileImgLocalPath, coverImgLocalPath;
-	coverImgLocalPath = profileImgLocalPath = false;
-	if (Object.keys(req.files).length > 0) {
-		profileImgLocalPath = req.files?.profileImg[0]?.path;
+	// let profileImgLocalPath, coverImgLocalPath;
+	// coverImgLocalPath = profileImgLocalPath = false;
+	// if (Object.keys(req.files).length > 0) {
+	// 	profileImgLocalPath = req.files?.profileImg[0]?.path;
 
-		coverImgLocalPath = req.files?.coverImg[0]?.path;
-	}
-	let profileImg = null 
-	let coverImg = null;
-	if (profileImgLocalPath)
-		profileImg = await uploadOnCloudinary(profileImgLocalPath);
-	if (coverImgLocalPath)
-		coverImg = await uploadOnCloudinary(coverImgLocalPath);
+	// 	coverImgLocalPath = req.files?.coverImg[0]?.path;
+	// }
+	// let profileImg = null
+	// let coverImg = null;
+	// if (profileImgLocalPath)
+	// 	profileImg = await uploadOnCloudinary(profileImgLocalPath);
+	// if (coverImgLocalPath)
+	// 	coverImg = await uploadOnCloudinary(coverImgLocalPath);
 
 	const newUser = await User.create({
 		fullName,
 		username,
 		email,
 		password,
-		profileImg: profileImg?.url || null,
-		coverImg: coverImg?.url || null,
+		profileImg: null,
+		coverImg: null,
 	});
 
 	const resUser = await User.findById(newUser._id).select(
@@ -103,7 +111,7 @@ export const login = asyncHandler(async (req, res) => {
 		maxAge: 15 * 24 * 60 * 60 * 1000, //MS
 		httpOnly: true,
 		sameSite: "strict",
-		secure: process.env.NODE_ENV !== "development",
+		secure: false,
 	};
 	return res
 		.cookie("accessToken", accessToken, cookieOption)
@@ -140,10 +148,11 @@ export const logout = asyncHandler(async (req, res) => {
 	// Clear the response cookies
 	const cookieOption = {
 		httpOnly: true,
-		secure: true,
+		secure: false,
 	};
 
 	res
+		.header("Access-Control-Allow-Credentials", true)
 		.status(200)
 		.clearCookie("accessToken", cookieOption)
 		.clearCookie("refreshToken", cookieOption)
@@ -160,5 +169,9 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 	const user = await User.findById(req.user._id).select(
 		"-password -refreshToken"
 	);
+
+	if (!user) {
+		throw new APIError("No authenticated user found");
+	}
 	return res.status(200).json(user);
 });

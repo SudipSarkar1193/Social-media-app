@@ -7,7 +7,9 @@ import { MdDriveFileRenameOutline } from "react-icons/md";
 import { FaEye } from "react-icons/fa";
 import { FaEyeSlash } from "react-icons/fa";
 import { set } from "mongoose";
-import { Link } from "react-router-dom";
+import { json, Link } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-hot-toast";
 
 const LoginPage = () => {
 	const [formData, setFormData] = useState({
@@ -15,6 +17,52 @@ const LoginPage = () => {
 		password: "",
 	});
 
+	const queryClient = useQueryClient();
+
+	const {
+		mutate: login,
+		isError,
+		isPending,
+		error,
+	} = useMutation({
+		mutationFn: async ({ usernameOrEmail, password }) => {
+			try {
+				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+				let username = null,
+					email = null;
+				if (emailRegex.test(usernameOrEmail)) {
+					email = usernameOrEmail;
+				} else {
+					username = usernameOrEmail;
+				}
+
+				const res = await fetch("/api/v1/auth/login", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ username, email, password }),
+				});
+
+				const jsonRes = await res.json();
+				console.log(jsonRes);
+				if (jsonRes.error){
+					
+					throw new Error(jsonRes.message || "Failed to Log in");
+				}
+				return jsonRes;
+			} catch (error) {
+				throw error;
+			}
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["userAuth"] });
+		},
+		onError: (error) => {
+			console.error(error.message);
+			toast.error(error.message);
+		},
+	});
 	const [showPassword, setShowPassword] = useState(false);
 
 	const handleInputChange = (e) => {
@@ -24,11 +72,9 @@ const LoginPage = () => {
 		});
 	};
 
-	const isError = true;
-
 	const handleSubmit = (e) => {
 		e.preventDefault();
-		console.log(formData);
+		login(formData);
 	};
 
 	return (

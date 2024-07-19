@@ -7,21 +7,23 @@ import notificationRoute from "./routes/notification.routes.js";
 import { connectDB } from "./db/connect.db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { APIError } from "./utils/APIError.js";
+import { APIResponse } from "./utils/APIResponse.js";
 dotenv.config({
 	path: "./.env",
 });
 const app = express();
-app.use(
-	cors({
-		origin: process.env.CORS_ORIGIN,
-		Credential: true, //Very Important
-		optionsSuccessStatus: 200, //ok
-	})
-);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static("public"));
+
+app.use(cors({
+	origin:process.env.CORS_ORIGIN,
+	credentials:true,
+	optionsSuccessStatus: 200, //ok
+}))
 
 app.get("/", (req, res) => {
 	res.json({

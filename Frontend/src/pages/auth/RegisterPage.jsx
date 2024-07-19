@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { json, Link, Navigate } from "react-router-dom";
 import { useState } from "react";
 
 import XSvg from "../../components/svgs/X";
@@ -7,8 +7,13 @@ import { MdOutlineMail } from "react-icons/md";
 import { FaUser } from "react-icons/fa";
 import { MdPassword } from "react-icons/md";
 import { MdDriveFileRenameOutline } from "react-icons/md";
+import { useMutation, useQuery } from "@tanstack/react-query";
+
+import { toast } from "react-hot-toast";
 
 const RegisterPage = () => {
+	const [isRegistered, setIsRegistered] = useState(false);
+
 	const [formData, setFormData] = useState({
 		email: "",
 		username: "",
@@ -16,16 +21,50 @@ const RegisterPage = () => {
 		password: "",
 	});
 
+	const {
+		mutate: signup,
+		isError,
+		isPending,
+		error,
+	} = useMutation({
+		mutationFn: async ({ email, username, fullName, password }) => {
+			try {
+				const res = await fetch("/api/v1/auth/signup", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ fullName, username, email, password }),
+				});
+
+				const resData = await res.json();
+				if (resData.error)
+					throw new Error(resData.message || "Failed to create account");
+			} catch (error) {
+				throw error;
+			}
+		},
+		onSuccess: () => {
+			toast.success("Signed up successfully");
+			setIsRegistered(true);
+		},
+		onError: (error) => {
+			console.error(error.message);
+			toast.error(error.message);
+		},
+	});
+	console.log("isRegistered", isRegistered);
+	if (isRegistered) {
+		return <Navigate to="/" />;
+	}
 	const handleSubmit = (e) => {
 		e.preventDefault();
-		console.log(formData);
+		signup(formData);
 	};
 
 	const handleInputChange = (e) => {
 		setFormData({ ...formData, [e.target.name]: e.target.value });
 	};
-
-	const isError = false;
 
 	return (
 		<div className="max-w-screen-xl mx-auto flex h-screen px-10">
@@ -87,7 +126,7 @@ const RegisterPage = () => {
 						/>
 					</label>
 					<button className="btn rounded-full btn-primary text-white">
-						Sign up
+						{isPending ? "Loader..." : "Sign up"}
 					</button>
 					{isError && <p className="text-red-500">Something went wrong</p>}
 				</form>

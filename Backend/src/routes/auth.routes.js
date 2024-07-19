@@ -1,31 +1,23 @@
 import express from "express";
-import { getCurrentUser, login, logout, signup } from "../controllers/auth.controllers.js";
+import {
+	getCurrentUser,
+	login,
+	logout,
+	signup,
+} from "../controllers/auth.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { authenticateUser } from "../middlewares/authenticateUser.middleware.js";
-
+import { ApiErrorResponseHandler } from "../middlewares/handleAPIErrorResponse.js";
 
 const router = express.Router();
 
-router.post(
-	"/signup",
-	upload.fields([
-		{
-			name: "profileImg",
-			maxCount: 1,
-		},
-		{
-			name: "coverImg",
-			maxCount: 1,
-		},
-	]),
-	signup
-);
-router.post("/login", login);
+router.post("/signup", signup, ApiErrorResponseHandler);
+router.post("/login", login, ApiErrorResponseHandler);
 
 //SECURE routes
 
-router.post("/logout",authenticateUser,logout)
+router.post("/logout", authenticateUser, logout, ApiErrorResponseHandler);
 
-router.get("/me",authenticateUser,getCurrentUser)
+router.get("/me", authenticateUser, getCurrentUser, ApiErrorResponseHandler);
 
 export default router;
