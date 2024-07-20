@@ -10,7 +10,6 @@ export const authenticateUser = asyncHandler(async (req, res, next) => {
 			req.header("Authorization")?.replace("Bearer ", "");
 
 		if (!accessToken) {
-			console.log("1")
 			throw new APIError(401, "Unauthorized Request");
 		}
 
@@ -20,7 +19,6 @@ export const authenticateUser = asyncHandler(async (req, res, next) => {
 		);
 
 		if (!verifiedToken) {
-			console.log("1")
 			throw new APIError(401, "Unauthorized Request");
 		}
 
@@ -28,11 +26,10 @@ export const authenticateUser = asyncHandler(async (req, res, next) => {
 			"_id username email"
 		);
 		if (!user) {
-
 			throw new APIError(404, "User not found.");
 		}
 		req.user = user;
-		console.log("req.user", req.user);
+
 		next();
 	} catch (error) {
 		throw new APIError(500, error.message);

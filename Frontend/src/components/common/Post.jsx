@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 
 const Post = ({ post }) => {
 	const [comment, setComment] = useState("");
-	const postOwner = post.user;
+	const postOwner = post.authorDetails;
 	const isLiked = false;
 
 	const isMyPost = true;
@@ -29,8 +29,8 @@ const Post = ({ post }) => {
 		<>
 			<div className='flex gap-2 items-start p-4 border-b border-gray-700'>
 				<div className='avatar'>
-					<Link to={`/profile/${postOwner.username}`} className='w-8 rounded-full overflow-hidden'>
-						<img src={postOwner.profileImg || "/avatar-placeholder.png"} />
+					<Link to={`/profile/${postOwner.author}`} className='w-8 rounded-full overflow-hidden'>
+						<img src={postOwner.img || "/avatar-placeholder.png"} />
 					</Link>
 				</div>
 				<div className='flex flex-col flex-1'>
@@ -85,15 +85,15 @@ const Post = ({ post }) => {
 												<div className='avatar'>
 													<div className='w-8 rounded-full'>
 														<img
-															src={comment.user.profileImg || "/avatar-placeholder.png"}
+															src={comment.authorDetails?.img || "/avatar-placeholder.png"}
 														/>
 													</div>
 												</div>
 												<div className='flex flex-col'>
 													<div className='flex items-center gap-1'>
-														<span className='font-bold'>{comment.user.fullName}</span>
+														<span className='font-bold'>{comment.authorDetails?.fullName}</span>
 														<span className='text-gray-700 text-sm'>
-															@{comment.user.username}
+															@{comment.authorDetails?.author}
 														</span>
 													</div>
 													<div className='text-sm'>{comment.text}</div>
