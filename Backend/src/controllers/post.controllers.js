@@ -17,22 +17,22 @@ export const createPost = asyncHandler(async (req, res) => {
 		throw new APIError(404, "No user found");
 	}
 
-	const { text } = req.body;
-	let postImgUrl = null;
-	if (Object.keys(req.files).length > 0) {
-		const postImgLocalPath = req.files?.postImg[0].path;
-		const uploadRes = await uploadOnCloudinary(postImgLocalPath);
-		postImgUrl = uploadRes.url;
-	}
+	const { text, img } = req.body;
 
-	if (!postImgUrl && !text) {
+	if (!(text || img)) {
 		throw new APIError(404, "Text or Image : At least one is required");
 	}
+	let imgUrl = null ;
+	if(img){
+		const uploadedResponse = await uploadOnCloudinary(img);
+		imgUrl = uploadedResponse.secure_url;
+	}
 	uid = uid.toString();
+
 	const post = await Post.create({
 		author: uid,
 		text,
-		img: postImgUrl,
+		img: imgUrl ,
 	});
 
 	if (!post) {

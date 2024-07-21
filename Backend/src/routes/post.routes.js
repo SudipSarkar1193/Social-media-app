@@ -11,21 +11,11 @@ import {
 	likeUnlikePost,
 } from "../controllers/post.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js";
-
+import { ApiErrorResponseHandler } from "../middlewares/handleAPIErrorResponse.js";
 const app = express();
 const router = express.Router();
 
-router.post(
-	"/create",
-	authenticateUser,
-	upload.fields([
-		{
-			name: "postImg",
-			maxCount: 1,
-		},
-	]),
-	createPost
-);
+router.post("/create", authenticateUser, createPost, ApiErrorResponseHandler);
 router.post("/like/:postId", authenticateUser, likeUnlikePost);
 router.post("/comment/:postId", authenticateUser, commentOnPost);
 router.delete("/:id", authenticateUser, deletePost);

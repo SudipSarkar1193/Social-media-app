@@ -10,9 +10,9 @@ import ProfilePage from "./pages/profile/ProfilePage";
 import { toast, Toaster } from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import LoadingSpinner from "./components/common/LoadingSpinner";
+// import "./index.css";
 
 const App = () => {
-	
 	const { data: authUser, isLoading } = useQuery({
 		queryKey: ["userAuth"],
 		queryFn: async () => {
@@ -23,9 +23,9 @@ const App = () => {
 						"Content-Type": "application/json",
 					},
 				});
-				
+
 				const jsonRes = await res.json();
-				
+
 				if (jsonRes.error || !res.ok) {
 					return null;
 				}
@@ -37,7 +37,7 @@ const App = () => {
 
 		retry: false,
 	});
-	
+
 	if (isLoading) {
 		return (
 			<div className="h-screen w-screen flex items-center justify-center">
@@ -47,7 +47,7 @@ const App = () => {
 	}
 
 	return (
-		<div className="flex max-w-6xl mx-auto">
+		<div className="flex max-w-6xl mx-auto no-scrollbar">
 			{authUser && <Sidebar />}
 
 			<Routes>

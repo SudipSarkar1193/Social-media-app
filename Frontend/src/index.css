@@ -2,3 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+
+.modal-action-custom {
+    @apply modal-action ;
+    @apply flex justify-around;
+}
+.btn-custom-1 {
+    @apply btn ; /* Applying DaisyUI button styles */
+    @apply bg-gray-600 text-white; /* Customizing the background and text color */
+    @apply w-16; /* Adding padding */
+    @apply rounded-md
+  }
+
+  .btn-custom-2 {
+    @apply btn ; /* Applying DaisyUI button styles */
+    @apply bg-red-500 text-white; /* Customizing the background and text color */
+    @apply w-16; /* Adding padding */
+    @apply rounded-md
+  }

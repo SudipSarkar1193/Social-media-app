@@ -131,7 +131,6 @@ export const updateUser = asyncHandler(async (req, res) => {
 
 		coverImgLocalPath = req.files?.coverImg[0]?.path;
 	}
-	
 
 	const userId = req.user._id;
 

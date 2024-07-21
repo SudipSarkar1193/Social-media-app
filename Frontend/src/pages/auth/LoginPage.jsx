@@ -46,8 +46,8 @@ const LoginPage = () => {
 
 				const jsonRes = await res.json();
 				console.log(jsonRes);
-				if (jsonRes.error){
-					
+
+				if (!res.ok) {
 					throw new Error(jsonRes.message || "Failed to Log in");
 				}
 				return jsonRes;
@@ -57,6 +57,7 @@ const LoginPage = () => {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["userAuth"] });
+			queryClient.invalidateQueries({ queryKey: ["suggestedUsers"] });
 		},
 		onError: (error) => {
 			console.error(error.message);
