@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import LoadingSpinner from "./LoadingSpinner";
-import "./Post.css";
+
 const Post = ({ post }) => {
 	const [comment, setComment] = useState("");
 	const postOwner = post.authorDetails;

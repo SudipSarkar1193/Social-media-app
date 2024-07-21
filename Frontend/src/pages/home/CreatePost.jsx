@@ -55,7 +55,6 @@ const CreatePost = () => {
 		},
 	});
 
-	console.log("cratePostData", cratePostData);
 
 	const handleSubmit = (e) => {
 		e.preventDefault();

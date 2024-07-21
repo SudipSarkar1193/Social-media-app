@@ -53,7 +53,7 @@ const RegisterPage = () => {
 			toast.error(error.message);
 		},
 	});
-	console.log("isRegistered", isRegistered);
+	
 	if (isRegistered) {
 		return <Navigate to="/" />;
 	}
