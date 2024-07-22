@@ -23,7 +23,7 @@ export const authenticateUser = asyncHandler(async (req, res, next) => {
 		}
 
 		const user = await User.findById(verifiedToken._id).select(
-			"_id username email"
+			"_id username email profileImg username fullName"
 		);
 		if (!user) {
 			throw new APIError(404, "User not found.");

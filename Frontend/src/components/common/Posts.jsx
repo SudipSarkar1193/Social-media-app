@@ -4,7 +4,7 @@ import { POSTS } from "../../utils/db/dummy";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-const Posts = ({ feedType }) => {
+const Posts = ({ feedType, userId }) => {
 	// const isLoading = false;
 	const endPoint = () => {
 		const r = "/api/v1/posts";
@@ -14,6 +14,10 @@ const Posts = ({ feedType }) => {
 				return `${r}/all`;
 			case "following":
 				return `${r}/following`;
+			case "posts":
+				return `${r}/posts/${userId}`;
+			case "likes":
+				return `${r}/likes/${userId}`;
 			default:
 				return `${r}/all`;
 		}
@@ -34,6 +38,7 @@ const Posts = ({ feedType }) => {
 				if (jsonRes.error || !res.ok) {
 					return null;
 				}
+				// console.log("post jsonRes", jsonRes);
 
 				return jsonRes.data.posts;
 			} catch (error) {
@@ -42,15 +47,15 @@ const Posts = ({ feedType }) => {
 		},
 	});
 
-	//Important !!! 
-	//if feed type is changed , we'd want useQuery to refetch the data 
+	//Important !!!
+	//if feed type is changed , we'd want useQuery to refetch the data
 
 	useEffect(() => {
 		refetch();
 	}, [feedType, refetch]);
 
-
 	const posts = Array.isArray(data) ? data : [];
+	
 
 	return (
 		<>

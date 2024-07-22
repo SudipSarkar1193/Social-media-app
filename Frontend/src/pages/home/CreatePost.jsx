@@ -63,7 +63,7 @@ const CreatePost = () => {
 
 	const handleImgChange = (e) => {
 		const file = e.target.files[0];
-		console.log("e.target", e.target);
+		
 
 		if (file) {
 			const reader = new FileReader();

@@ -5,6 +5,8 @@ import useFollow from "../../custom_hooks/useFollow.jsx";
 import LoadingSpinner from "./LoadingSpinner.jsx";
 
 const RightPanel = () => {
+
+	
 	const { data: suggestedUsers, isLoading } = useQuery({
 		queryKey: ["suggestedUsers"],
 		queryFn: async () => {
@@ -33,8 +35,8 @@ const RightPanel = () => {
 
 	const handleFollow = async (e, id) => {
 		//e.preventDefault();
-		const x = followUnfollow(id);
-		console.log(" X ", x);
+		followUnfollow(id);
+		
 	};
 
 	return (

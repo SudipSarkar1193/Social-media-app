@@ -16,7 +16,7 @@ const useFollow = () => {
 				if (!res.ok) {
 					throw new Error(data.error || "Something went wrong!");
 				}
-                console.log(jsonRes)
+                
 				return jsonRes;
                 
 			} catch (error) {

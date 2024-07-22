@@ -9,6 +9,8 @@ import {
 	uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 
+import { ObjectId } from "mongodb";
+
 export const createPost = asyncHandler(async (req, res) => {
 	let uid = req.user._id;
 	const user = await User.findById(uid).select("-password -refreshToken");
@@ -22,8 +24,8 @@ export const createPost = asyncHandler(async (req, res) => {
 	if (!(text || img)) {
 		throw new APIError(404, "Text or Image : At least one is required");
 	}
-	let imgUrl = null ;
-	if(img){
+	let imgUrl = null;
+	if (img) {
 		const uploadedResponse = await uploadOnCloudinary(img);
 		imgUrl = uploadedResponse.secure_url;
 	}
@@ -32,7 +34,7 @@ export const createPost = asyncHandler(async (req, res) => {
 	const post = await Post.create({
 		author: uid,
 		text,
-		img: imgUrl ,
+		img: imgUrl,
 	});
 
 	if (!post) {
@@ -87,7 +89,7 @@ export const likeUnlikePost = asyncHandler(async (req, res) => {
 		? { $pull: { likedPosts: postId } }
 		: { $push: { likedPosts: postId } };
 
-	const action = isAlreadyLiked ? "unliked" : "liked";
+	const action = isAlreadyLiked ? "Unliked" : "Liked";
 
 	const updatedPost = await Post.findByIdAndUpdate(postId, update, {
 		new: true,
@@ -107,7 +109,11 @@ export const likeUnlikePost = asyncHandler(async (req, res) => {
 		type: "like",
 	});
 
-	return res.status(200).json(new APIResponse(200, {}, `${action} post`));
+	const updatedLikes = updatedPost.likes;
+
+	return res
+		.status(200)
+		.json(new APIResponse(200, { updatedLikes }, `${action} post`));
 });
 
 export const commentOnPost = asyncHandler(async (req, res) => {
@@ -140,12 +146,67 @@ export const commentOnPost = asyncHandler(async (req, res) => {
 		text,
 	});
 
+	const resPos = await Post.aggregate([
+		{
+			$match: {
+				_id: new ObjectId(postId.toString()),
+			},
+		},
+		{
+			$unwind: {
+				path: "$comments",
+				preserveNullAndEmptyArrays: true, // To keep posts with no comments
+			},
+		},
+		{
+			$lookup: {
+				from: "users",
+				localField: "comments.author",
+				foreignField: "_id",
+				as: "comments.authorDetails",
+			},
+		},
+		{
+			$unwind: {
+				path: "$comments.authorDetails",
+				preserveNullAndEmptyArrays: true, // To handle comments with no author details
+			},
+		},
+		{
+			$project: {
+				"comments.authorDetails.password": 0,
+				"comments.authorDetails.refreshToken": 0,
+			},
+		},
+		{
+			$group: {
+				_id: "$_id",
+				text: { $first: "$text" },
+				img: { $first: "$img" },
+				likes: { $first: "$likes" },
+				author: { $first: "$author" },
+				comments: {
+					$push: {
+						text: "$comments.text",
+						author: "$comments.author",
+						authorDetails: "$comments.authorDetails",
+					},
+				},
+				createdAt: { $first: "$createdAt" },
+				updatedAt: { $first: "$updatedAt" },
+				isFollowedAuthor: { $first: "$isFollowedAuthor" },
+			},
+		},
+	]);
+
+	//profileImg:req.user.profileImg,username:req.user.username,fullName:req.user.fullName,
+
 	return res
 		.status(200)
 		.json(
 			new APIResponse(
 				200,
-				{ comments: updatedPost.comments, notification },
+				{ comments: updatedPost.comments, updatedPost: resPos, notification },
 				"Comment added"
 			)
 		);
@@ -287,32 +348,134 @@ export const getAllPosts = asyncHandler(async (req, res) => {
 });
 
 export const getAllLikedPosts = asyncHandler(async (req, res) => {
+	
+	let { page = 1, limit = 20 } = req.query;
+	limit = Number(limit);
+
 	const { id: userId } = req.params;
 
 	const user = await User.findById(userId).select("likedPosts");
+
 	if (!user) {
 		throw new APIError(400, "No user found");
 	}
 	const likedPostsArray = user.likedPosts;
 
-	const likedPosts = await Post.find({
-		_id: { $in: likedPostsArray },
-	})
-		.populate({
-			path: "author",
-			select: "-password -refreshToken",
-		})
-		.populate({
-			path: "comments.author",
-			select: "-password -refreshToken",
-		});
+	// const likedPosts = await Post.find({
+	// 	_id: { $in: likedPostsArray },
+	// })
+	// 	.populate({
+	// 		path: "author",
+	// 		select: "-password -refreshToken",
+	// 	})
+	// 	.populate({
+	// 		path: "comments.author",
+	// 		select: "-password -refreshToken",
+	// 	});
 
+	const likedPosts = await Post.aggregate([
+		{
+			$match: {
+				_id: { $in: likedPostsArray },
+			},
+		},
+		// Step 2: Sort the posts by isFollowedAuthor and createdAt
+		{
+			$sort: {
+				createdAt: -1,
+			},
+		},
+		// Step 3: Pagination
+		{
+			$skip: (page - 1) * limit,
+		},
+		{
+			$limit: limit,
+		},
+		// Step 4: Lookup for author details
+		{
+			$lookup: {
+				from: "users",
+				localField: "author",
+				foreignField: "_id",
+				as: "authorDetails",
+			},
+		},
+		{
+			$unwind: "$authorDetails",
+		},
+		{
+			$project: {
+				"authorDetails.password": 0,
+				"authorDetails.refreshToken": 0,
+			},
+		},
+		// Step 5: Unwind comments to perform lookup for each comment's author
+		{
+			$unwind: {
+				path: "$comments",
+				preserveNullAndEmptyArrays: true, // To keep posts with no comments
+			},
+		},
+		// Step 6: Lookup for comment author details
+		{
+			$lookup: {
+				from: "users",
+				localField: "comments.author",
+				foreignField: "_id",
+				as: "comments.authorDetails",
+			},
+		},
+		{
+			$unwind: {
+				path: "$comments.authorDetails",
+				preserveNullAndEmptyArrays: true, // To handle comments with no author details
+			},
+		},
+		// Exclude sensitive fields from comments.authorDetails
+		{
+			$project: {
+				"comments.authorDetails.password": 0,
+				"comments.authorDetails.refreshToken": 0,
+			},
+		},
+		// Step 7: Group comments back together
+		{
+			$group: {
+				_id: "$_id",
+				text: { $first: "$text" },
+				img: { $first: "$img" },
+				likes: { $first: "$likes" },
+				author: { $first: "$author" },
+				authorDetails: { $first: "$authorDetails" },
+				comments: {
+					$push: {
+						text: "$comments.text",
+						author: "$comments.author",
+						authorDetails: "$comments.authorDetails",
+					},
+				},
+				createdAt: { $first: "$createdAt" },
+				updatedAt: { $first: "$updatedAt" },
+				isFollowedAuthor: { $first: "$isFollowedAuthor" },
+			},
+		},
+		// Step 8: Restore the original sort order
+		{
+			$sort: {
+				createdAt: -1,
+			},
+		},
+	]);
+
+	const totalPosts = likedPostsArray.length;
+    const totalPages = Math.ceil(totalPosts / limit);
 	return res
 		.status(200)
 		.json(
 			new APIResponse(
 				200,
-				{ likedPosts },
+				{ posts: likedPosts, totalPosts, totalPages },
 				"All liked posts retrieved successfully"
 			)
 		);
@@ -462,23 +625,118 @@ export const getAllFollowingPosts = asyncHandler(async (req, res) => {
 });
 
 export const getUserPosts = asyncHandler(async (req, res) => {
-	const { username } = req.params;
+	let { page = 1, limit = 20 } = req.query;
+	limit = Number(limit);
+	const { id: userId } = req.params;
 
-	const user = await User.findOne({ username });
+	const user = await User.findById(userId);
 	if (!user) throw new APIError(404, "User not found");
 
-	const posts = await Post.find({ author: user._id })
-		.sort({ createdAt: -1 })
-		.populate({
-			path: "author",
-			select: "-password -refreshToken",
-		})
-		.populate({
-			path: "comments.author",
-			select: "-password -refreshToken",
-		});
+	const posts = await Post.aggregate([
+		{
+			$match: {
+				author: new ObjectId(user._id.toString()),
+			},
+		},
+		// Step 2: Sort the posts by isFollowedAuthor and createdAt
+		{
+			$sort: {
+				createdAt: -1,
+			},
+		},
+		// Step 3: Pagination
+		{
+			$skip: (page - 1) * limit,
+		},
+		{
+			$limit: limit,
+		},
+		// Step 4: Lookup for author details
+		{
+			$lookup: {
+				from: "users",
+				localField: "author",
+				foreignField: "_id",
+				as: "authorDetails",
+			},
+		},
+		{
+			$unwind: "$authorDetails",
+		},
+		{
+			$project: {
+				"authorDetails.password": 0,
+				"authorDetails.refreshToken": 0,
+			},
+		},
+		// Step 5: Unwind comments to perform lookup for each comment's author
+		{
+			$unwind: {
+				path: "$comments",
+				preserveNullAndEmptyArrays: true, // To keep posts with no comments
+			},
+		},
+		// Step 6: Lookup for comment author details
+		{
+			$lookup: {
+				from: "users",
+				localField: "comments.author",
+				foreignField: "_id",
+				as: "comments.authorDetails",
+			},
+		},
+		{
+			$unwind: {
+				path: "$comments.authorDetails",
+				preserveNullAndEmptyArrays: true, // To handle comments with no author details
+			},
+		},
+		// Exclude sensitive fields from comments.authorDetails
+		{
+			$project: {
+				"comments.authorDetails.password": 0,
+				"comments.authorDetails.refreshToken": 0,
+			},
+		},
+		// Step 7: Group comments back together
+		{
+			$group: {
+				_id: "$_id",
+				text: { $first: "$text" },
+				img: { $first: "$img" },
+				likes: { $first: "$likes" },
+				author: { $first: "$author" },
+				authorDetails: { $first: "$authorDetails" },
+				comments: {
+					$push: {
+						text: "$comments.text",
+						author: "$comments.author",
+						authorDetails: "$comments.authorDetails",
+					},
+				},
+				createdAt: { $first: "$createdAt" },
+				updatedAt: { $first: "$updatedAt" },
+				isFollowedAuthor: { $first: "$isFollowedAuthor" },
+			},
+		},
+		// Step 8: Restore the original sort order
+		{
+			$sort: {
+				createdAt: -1,
+			},
+		},
+	]);
+
+	const totalPosts = posts.length;
+    const totalPages = Math.ceil(totalPosts / limit);
 
 	return res
 		.status(200)
-		.json(new APIResponse(200, { posts }, "User-Posts retrieved successfully"));
+		.json(
+			new APIResponse(
+				200,
+				{ posts, totalPosts, totalPages },
+				"User-Posts retrieved successfully"
+			)
+		);
 });

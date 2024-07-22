@@ -3,7 +3,7 @@ import { BiRepost } from "react-icons/bi";
 import { FaRegHeart } from "react-icons/fa";
 import { FaRegBookmark } from "react-icons/fa6";
 import { FaTrash } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -11,12 +11,11 @@ import LoadingSpinner from "./LoadingSpinner";
 
 const Post = ({ post }) => {
 	const [comment, setComment] = useState("");
-	const postOwner = post.authorDetails;
-	const isLiked = false;
+	const postOwner = post.authorDetails||post.author;
+	// console.log("post",post);
+	// console.log("postOwner",postOwner);
 
 	const formattedDate = "1h";
-	const [confirmDelete, setConfirmDelete] = useState(false);
-	const isCommenting = false;
 
 	const { data: authUser } = useQuery({ queryKey: ["userAuth"] }); //⭐⭐
 
@@ -38,7 +37,7 @@ const Post = ({ post }) => {
 				});
 
 				const jsonRes = await res.json();
-				console.log("res", res);
+				
 				if (jsonRes.error) {
 					throw new Error(jsonRes.error || "Failed to delete Post");
 				}
@@ -65,28 +64,106 @@ const Post = ({ post }) => {
 		deletePost();
 	};
 
+	const { mutate: commentPost, isPending: isCommenting } = useMutation({
+		mutationFn: async () => {
+			try {
+				const res = await fetch(`/api/v1/posts/comment/${post._id}`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ text: comment }),
+				});
+				const data = await res.json();
+
+				if (!res.ok) {
+					throw new Error(data.error || "Something went wrong");
+				}
+				return data;
+			} catch (error) {
+				throw new Error(error);
+			}
+		},
+		onSuccess: (data) => {
+			
+			const comments = data.data.updatedPost[0].comments;
+			
+			toast.success("Comment posted successfully");
+			setComment("");
+
+			queryClient.setQueryData(["posts"], (oldData) => {
+				return oldData.map((p) => {
+					if (p._id === post._id) {
+						return { ...p,comments };
+					}
+					return p;
+				});
+			});
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		},
+	});
+
 	const handlePostComment = (e) => {
 		e.preventDefault();
+		if (isCommenting) return;
+		commentPost();
 	};
 
-	const handleLikePost = () => {};
+	const { mutate: like, isPending: isLiking } = useMutation({
+		mutationFn: async () => {
+			try {
+				const res = await fetch(`/api/v1/posts/like/${post._id}`, {
+					method: "POST",
+				});
 
-	useEffect(() => {
-		if (confirmDelete) {
-			document.body.style.overflow = "hidden";
-		} else {
-			document.body.style.overflow = "auto";
-		}
-	}, [confirmDelete]);
+				if (!res.ok) {
+					throw new Error("Error liking the post");
+				}
+
+				const jsonRes = await res.json();
+
+				return jsonRes;
+			} catch (error) {
+				throw error;
+			}
+		},
+		onSuccess: (data) => {
+			const updatedLikes = data.data.updatedLikes;
+
+			toast.success(data.message);
+
+			// queryClient.invalidateQueries({ queryKey: ["posts"] });
+			// instead, update the cache directly for that post
+
+			queryClient.setQueryData(["posts"], (oldData) => {
+				return oldData.map((p) => {
+					if (p._id === post._id) {
+						return { ...p, likes: updatedLikes };
+					}
+					return p;
+				});
+			});
+		},
+		onError: (err) => {
+			toast.error(err.message);
+		},
+	});
+
+	const isLiked = post.likes.includes(authUser._id);
+
+	const handleLikePost = () => {
+		if (isLiking) return;
+		like();
+	};
 
 	return (
 		<div className="overflow-y-hidden no-scrollbar">
-			<div
-				className={`flex gap-2  ${!confirmDelete ? "items-start" : ""} p-4 border-b border-gray-700 overflow-y-hidden no-scrollbar`}
-			>
+			<div className="flex gap-2 items-start p-4 border-b border-gray-700 overflow-y-hidden no-scrollbar">
 				<div className="avatar">
 					<Link
-						to={`/profile/${postOwner.author}`}
+						to={`/profile/${postOwner.author||postOwner._id}`}
 						className="w-8 rounded-full overflow-hidden"
 					>
 						<img src={postOwner.img || "/avatar-placeholder.png"} />
@@ -140,10 +217,11 @@ const Post = ({ post }) => {
 							>
 								<FaRegComment className="w-4 h-4  text-slate-500 group-hover:text-sky-400" />
 								<span className="text-sm text-slate-500 group-hover:text-sky-400">
-									{post.comments.length}
+									{post.comments?.length - 1}
 								</span>
 							</div>
 							{/* We're using Modal Component from DaisyUI */}
+
 							<dialog
 								id={`comments_modal${post._id}`}
 								className="modal border-none outline-none"
@@ -151,7 +229,7 @@ const Post = ({ post }) => {
 								<div className="modal-box rounded border border-gray-600">
 									<h3 className="font-bold text-lg mb-4">COMMENTS</h3>
 									<div className="flex flex-col gap-3 max-h-60 overflow-auto">
-										{post.comments.length === 0 && (
+										{post.comments?.length === 1 && (
 											<p className="text-sm text-slate-500">
 												No comments yet 🤔 Be the first one 😉
 											</p>
@@ -162,7 +240,7 @@ const Post = ({ post }) => {
 													<div className="w-8 rounded-full">
 														<img
 															src={
-																comment.authorDetails?.img ||
+																comment.authorDetails?.profileImg ||
 																"/avatar-placeholder.png"
 															}
 														/>
@@ -174,7 +252,7 @@ const Post = ({ post }) => {
 															{comment.authorDetails?.fullName}
 														</span>
 														<span className="text-gray-700 text-sm">
-															@{comment.authorDetails?.author}
+															@{comment.authorDetails?.username}
 														</span>
 													</div>
 													<div className="text-sm">{comment.text}</div>
@@ -205,6 +283,7 @@ const Post = ({ post }) => {
 									<button className="outline-none">close</button>
 								</form>
 							</dialog>
+
 							<div className="flex gap-1 items-center group cursor-pointer">
 								<BiRepost className="w-6 h-6  text-slate-500 group-hover:text-green-500" />
 								<span className="text-sm text-slate-500 group-hover:text-green-500">
@@ -215,10 +294,11 @@ const Post = ({ post }) => {
 								className="flex gap-1 items-center group cursor-pointer"
 								onClick={handleLikePost}
 							>
-								{!isLiked && (
+								{isLiking && <LoadingSpinner size="sm" />}
+								{!isLiked && !isLiking && (
 									<FaRegHeart className="w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500" />
 								)}
-								{isLiked && (
+								{isLiked && !isLiking && (
 									<FaRegHeart className="w-4 h-4 cursor-pointer text-pink-500 " />
 								)}
 
@@ -240,11 +320,11 @@ const Post = ({ post }) => {
 				<dialog id="my_modal_1" className="modal modal-bottom sm:modal-middle">
 					<div className="modal-box">
 						<h3 className="font-bold text-lg">Confirm !</h3>
-						<p className="py-4">
-							Do you really want to delete the post ?
-						</p>
+						<p className="py-4">Do you really want to delete the post ?</p>
 						<div className="modal-action-custom">
-							<button className="btn-custom-2" onClick={handleDeletePost}>Yes</button>
+							<button className="btn-custom-2" onClick={handleDeletePost}>
+								Yes
+							</button>
 							<form method="dialog">
 								{/* if there is a button in form, it will close the modal */}
 								<button className="btn-custom-1">Cancel</button>
@@ -252,12 +332,8 @@ const Post = ({ post }) => {
 						</div>
 					</div>
 				</dialog>
-
 			</div>
 		</div>
 	);
 };
 export default Post;
-
-
-
