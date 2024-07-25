@@ -8,14 +8,14 @@ import { Link } from "react-router-dom";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import LoadingSpinner from "./LoadingSpinner";
+import { timeAgo } from "../../utils/timeAgo.js";
 
 const Post = ({ post }) => {
 	const [comment, setComment] = useState("");
-	const postOwner = post.authorDetails||post.author;
-	// console.log("post",post);
-	// console.log("postOwner",postOwner);
+	const postOwner = post.authorDetails || post.author;
 
-	const formattedDate = "1h";
+	//console.log("postOwner", postOwner);
+	const formattedDate = timeAgo(post.createdAt);
 
 	const { data: authUser } = useQuery({ queryKey: ["userAuth"] }); //⭐⭐
 
@@ -37,7 +37,7 @@ const Post = ({ post }) => {
 				});
 
 				const jsonRes = await res.json();
-				
+
 				if (jsonRes.error) {
 					throw new Error(jsonRes.error || "Failed to delete Post");
 				}
@@ -85,16 +85,15 @@ const Post = ({ post }) => {
 			}
 		},
 		onSuccess: (data) => {
-			
 			const comments = data.data.updatedPost[0].comments;
-			
+
 			toast.success("Comment posted successfully");
 			setComment("");
 
 			queryClient.setQueryData(["posts"], (oldData) => {
 				return oldData.map((p) => {
 					if (p._id === post._id) {
-						return { ...p,comments };
+						return { ...p, comments };
 					}
 					return p;
 				});
@@ -158,25 +157,34 @@ const Post = ({ post }) => {
 		like();
 	};
 
+	const filteredComments = post.comments.filter(
+		(comment) => Object.keys(comment).length > 0
+	);
+
 	return (
 		<div className="overflow-y-hidden no-scrollbar">
 			<div className="flex gap-2 items-start p-4 border-b border-gray-700 overflow-y-hidden no-scrollbar">
 				<div className="avatar">
 					<Link
-						to={`/profile/${postOwner.author||postOwner._id}`}
+						to={`/profile/${postOwner?.username}`}
 						className="w-8 rounded-full overflow-hidden"
 					>
-						<img src={postOwner.img || "/avatar-placeholder.png"} />
+						<img
+							src={
+								postOwner?.profileImg ||
+								"./avatar-placeholder.png"
+							}
+						/>
 					</Link>
 				</div>
 				<div className="flex flex-col flex-1 z-10">
 					<div className="flex gap-2 items-center">
-						<Link to={`/profile/${postOwner.username}`} className="font-bold">
-							{postOwner.fullName}
+						<Link to={`/profile/${postOwner?.username}`} className="font-bold">
+							{postOwner?.fullName}
 						</Link>
 						<span className="text-gray-700 flex gap-1 text-sm">
-							<Link to={`/profile/${postOwner.username}`}>
-								@{postOwner.username}
+							<Link to={`/profile/${postOwner?.username}`}>
+								@{postOwner?.username}
 							</Link>
 							<span>·</span>
 							<span>{formattedDate}</span>
@@ -217,7 +225,7 @@ const Post = ({ post }) => {
 							>
 								<FaRegComment className="w-4 h-4  text-slate-500 group-hover:text-sky-400" />
 								<span className="text-sm text-slate-500 group-hover:text-sky-400">
-									{post.comments?.length - 1}
+									{filteredComments?.length}
 								</span>
 							</div>
 							{/* We're using Modal Component from DaisyUI */}
@@ -229,7 +237,7 @@ const Post = ({ post }) => {
 								<div className="modal-box rounded border border-gray-600">
 									<h3 className="font-bold text-lg mb-4">COMMENTS</h3>
 									<div className="flex flex-col gap-3 max-h-60 overflow-auto">
-										{post.comments?.length === 1 && (
+										{filteredComments.length === 0 && (
 											<p className="text-sm text-slate-500">
 												No comments yet 🤔 Be the first one 😉
 											</p>

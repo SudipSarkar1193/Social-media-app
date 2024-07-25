@@ -45,7 +45,7 @@ const LoginPage = () => {
 				});
 
 				const jsonRes = await res.json();
-				console.log(jsonRes);
+				
 
 				if (!res.ok) {
 					throw new Error(jsonRes.message || "Failed to Log in");
@@ -71,9 +71,11 @@ const LoginPage = () => {
 			...formData,
 			[e.target.name]: e.target.value,
 		});
+		
 	};
 
 	const handleSubmit = (e) => {
+		if(isPending) return;
 		e.preventDefault();
 		login(formData);
 	};
@@ -102,6 +104,7 @@ const LoginPage = () => {
 						<input
 							type="text"
 							name="usernameOrEmail"
+							autocomplete="username"
 							className="grow"
 							placeholder="Email or Username"
 							value={formData.usernameOrEmail}
@@ -115,9 +118,11 @@ const LoginPage = () => {
 							type={showPassword ? "text" : "password"}
 							name="password"
 							placeholder="Password"
+							autocomplete="new-password"
 							className="grow"
 							value={formData.password}
 							onChange={handleInputChange}
+
 						/>
 						{showPassword ? (
 							<FaEye onClick={() => setShowPassword(false)} />

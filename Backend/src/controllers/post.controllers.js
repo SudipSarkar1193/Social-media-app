@@ -10,6 +10,7 @@ import {
 } from "../utils/cloudinary.js";
 
 import { ObjectId } from "mongodb";
+import mongoose from "mongoose";
 
 export const createPost = asyncHandler(async (req, res) => {
 	let uid = req.user._id;
@@ -103,11 +104,15 @@ export const likeUnlikePost = asyncHandler(async (req, res) => {
 		}
 	);
 
-	const notification = await Notification.create({
-		from: req.user._id,
-		to: post.author,
-		type: "like",
-	});
+	let notification = null;
+
+	if (!isAlreadyLiked) {
+		notification = await Notification.create({
+			from: req.user._id,
+			to: post.author,
+			type: "like",
+		});
+	}
 
 	const updatedLikes = updatedPost.likes;
 
@@ -149,7 +154,7 @@ export const commentOnPost = asyncHandler(async (req, res) => {
 	const resPos = await Post.aggregate([
 		{
 			$match: {
-				_id: new ObjectId(postId.toString()),
+				_id: new mongoose.Types.ObjectId(postId.toString()),
 			},
 		},
 		{
@@ -206,7 +211,7 @@ export const commentOnPost = asyncHandler(async (req, res) => {
 		.json(
 			new APIResponse(
 				200,
-				{ comments: updatedPost.comments, updatedPost: resPos, notification },
+				{ comments: updatedPost.comments, updatedPost: resPos },
 				"Comment added"
 			)
 		);
@@ -348,7 +353,6 @@ export const getAllPosts = asyncHandler(async (req, res) => {
 });
 
 export const getAllLikedPosts = asyncHandler(async (req, res) => {
-	
 	let { page = 1, limit = 20 } = req.query;
 	limit = Number(limit);
 
@@ -469,7 +473,7 @@ export const getAllLikedPosts = asyncHandler(async (req, res) => {
 	]);
 
 	const totalPosts = likedPostsArray.length;
-    const totalPages = Math.ceil(totalPosts / limit);
+	const totalPages = Math.ceil(totalPosts / limit);
 	return res
 		.status(200)
 		.json(
@@ -635,7 +639,7 @@ export const getUserPosts = asyncHandler(async (req, res) => {
 	const posts = await Post.aggregate([
 		{
 			$match: {
-				author: new ObjectId(user._id.toString()),
+				author: new mongoose.Types.ObjectId(user._id.toString()),
 			},
 		},
 		// Step 2: Sort the posts by isFollowedAuthor and createdAt
@@ -728,7 +732,7 @@ export const getUserPosts = asyncHandler(async (req, res) => {
 	]);
 
 	const totalPosts = posts.length;
-    const totalPages = Math.ceil(totalPosts / limit);
+	const totalPages = Math.ceil(totalPosts / limit);
 
 	return res
 		.status(200)

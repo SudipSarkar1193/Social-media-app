@@ -52,10 +52,10 @@ const Posts = ({ feedType, userId }) => {
 
 	useEffect(() => {
 		refetch();
-	}, [feedType, refetch]);
+	}, [feedType, refetch, userId]);
 
 	const posts = Array.isArray(data) ? data : [];
-	
+
 
 	return (
 		<>

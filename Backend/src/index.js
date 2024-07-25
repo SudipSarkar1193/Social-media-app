@@ -34,7 +34,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/posts", postRoute);
-app.use("/api/v1/notification", notificationRoute);
+app.use("/api/v1/notifications", notificationRoute);
 
 app.on("error", (err) => {
 	console.log("ERROR:", err);

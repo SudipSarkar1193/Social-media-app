@@ -9,8 +9,6 @@ const CreatePost = () => {
 	const [text, setText] = useState("");
 	const [img, setImg] = useState(null);
 
-	
-
 	const imgRef = useRef(null);
 
 	const { data: userAuth } = useQuery({ queryKey: ["userAuth"] });

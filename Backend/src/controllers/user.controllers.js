@@ -124,13 +124,7 @@ export const updateUser = asyncHandler(async (req, res) => {
 	const { fullName, email, username, currentPassword, newPassword, bio, link } =
 		req.body;
 
-	let profileImgLocalPath, coverImgLocalPath;
-	coverImgLocalPath = profileImgLocalPath = false;
-	if (Object.keys(req.files).length > 0) {
-		profileImgLocalPath = req.files?.profileImg[0]?.path;
-
-		coverImgLocalPath = req.files?.coverImg[0]?.path;
-	}
+	let { profileImg, coverImg } = req.body;
 
 	const userId = req.user._id;
 
@@ -145,7 +139,7 @@ export const updateUser = asyncHandler(async (req, res) => {
 	}
 
 	if (currentPassword && newPassword) {
-		const isMatch = await user.isPasswordCorrect(newPassword);
+		const isMatch = await user.isPasswordCorrect(currentPassword);
 
 		if (!isMatch) throw new APIError(400, "Incorrect password");
 
@@ -160,21 +154,20 @@ export const updateUser = asyncHandler(async (req, res) => {
 		user.password = newPassword;
 	}
 
-	if (profileImgLocalPath) {
+	if (profileImg) {
 		if (user.profileImg) {
 			// https://res.cloudinary.com/dyfqon1v6/image/upload/v1712997552/zmxorcxexpdbh8r0bkjb.png
 			await deleteFromCloudinary(user.profileImg);
 		}
-		const profileImgUploadResponse =
-			await uploadOnCloudinary(profileImgLocalPath);
+		const profileImgUploadResponse = await uploadOnCloudinary(profileImg);
 		user.profileImg = profileImgUploadResponse.url;
 	}
 
-	if (coverImgLocalPath) {
+	if (coverImg) {
 		if (user.coverImg) {
 			await deleteFromCloudinary(user.coverImg);
 		}
-		const coverImgUploadResponse = await uploadOnCloudinary(coverImgLocalPath);
+		const coverImgUploadResponse = await uploadOnCloudinary(coverImg);
 		user.coverImg = coverImgUploadResponse.url;
 	}
 

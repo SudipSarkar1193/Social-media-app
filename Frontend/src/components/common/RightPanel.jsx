@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
 import RightPanelSkeleton from "../skeletons/RightPanelSkeleton.jsx";
 import { useQuery } from "@tanstack/react-query";
-import useFollow from "../../custom_hooks/useFollow.jsx";
+import useFollow from "../../custom_hooks/useFollow.js";
 import LoadingSpinner from "./LoadingSpinner.jsx";
+import { useEffect } from "react";
 
 const RightPanel = () => {
-
-	
 	const { data: suggestedUsers, isLoading } = useQuery({
 		queryKey: ["suggestedUsers"],
 		queryFn: async () => {
@@ -34,9 +33,8 @@ const RightPanel = () => {
 	const { followUnfollow, isPending } = useFollow();
 
 	const handleFollow = async (e, id) => {
-		//e.preventDefault();
+		e.preventDefault();
 		followUnfollow(id);
-		
 	};
 
 	return (
@@ -56,26 +54,30 @@ const RightPanel = () => {
 					)}
 					{!isLoading &&
 						suggestedUsers?.map((user) => (
-							<Link
-								to={`/profile/${user.username}`}
-								className="flex items-center justify-between gap-4"
-								key={user._id}
-							>
-								<div className="flex gap-2 items-center">
-									<div className="avatar">
-										<div className="w-8 rounded-full">
-											<img src={user.profileImg || "/avatar-placeholder.png"} />
+							<div className="flex items-center justify-between gap-4">
+								<Link
+									to={`/profile/${user?.username}`}
+									
+									key={user._id}
+								>
+									<div className="flex gap-2 items-center">
+										<div className="avatar">
+											<div className="w-8 rounded-full">
+												<img
+													src={user.profileImg || "/avatar-placeholder.png"}
+												/>
+											</div>
+										</div>
+										<div className="flex flex-col">
+											<span className="font-semibold tracking-tight truncate w-28">
+												{user.fullName}
+											</span>
+											<span className="text-sm text-slate-500">
+												@{user.username}
+											</span>
 										</div>
 									</div>
-									<div className="flex flex-col">
-										<span className="font-semibold tracking-tight truncate w-28">
-											{user.fullName}
-										</span>
-										<span className="text-sm text-slate-500">
-											@{user.username}
-										</span>
-									</div>
-								</div>
+								</Link>
 								<div>
 									<button
 										className="btn bg-white text-black hover:bg-white hover:opacity-90 rounded-full btn-sm"
@@ -84,7 +86,7 @@ const RightPanel = () => {
 										{isPending ? <LoadingSpinner size="sm" /> : "Follow"}
 									</button>
 								</div>
-							</Link>
+							</div>
 						))}
 				</div>
 			</div>
