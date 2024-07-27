@@ -16,7 +16,7 @@ export default defineConfig({
 		port: process.env.FRONTEND_PORT,
 		proxy: {
 			"/api": {
-				target: `http://localhost:8000`,
+				target: `https://social-media-696f72n78-sudip-sarkars-projects.vercel.app/`,
 				changeOrigin: true,
 			},
 		},
