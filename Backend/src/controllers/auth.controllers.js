@@ -3,6 +3,9 @@ import { APIError } from "../utils/APIError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { APIResponse } from "../utils/APIResponse.js";
+import { VerificationToken } from "../models/verificationToken.model.js";
+import crypto from "crypto";
+import { sendMail } from "../utils/sendMail.js";
 
 const generateAccessAndRefreshToken = async (user) => {
 	const accessToken = await user.generateAccessToken();
@@ -49,24 +52,6 @@ export const signup = asyncHandler(async (req, res) => {
 		throw new APIError(409, "User with email / username already exists");
 	}
 
-	//check for images, check for avatar if exists
-
-	// console.log("req.files", req.files);
-
-	// let profileImgLocalPath, coverImgLocalPath;
-	// coverImgLocalPath = profileImgLocalPath = false;
-	// if (Object.keys(req.files).length > 0) {
-	// 	profileImgLocalPath = req.files?.profileImg[0]?.path;
-
-	// 	coverImgLocalPath = req.files?.coverImg[0]?.path;
-	// }
-	// let profileImg = null
-	// let coverImg = null;
-	// if (profileImgLocalPath)
-	// 	profileImg = await uploadOnCloudinary(profileImgLocalPath);
-	// if (coverImgLocalPath)
-	// 	coverImg = await uploadOnCloudinary(coverImgLocalPath);
-
 	const newUser = await User.create({
 		fullName,
 		username,
@@ -76,13 +61,74 @@ export const signup = asyncHandler(async (req, res) => {
 		coverImg: null,
 	});
 
+	const token = await VerificationToken.create({
+		userId: newUser._id,
+		token: crypto.randomBytes(32).toString("hex"),
+	});
+
+	const url = `${process.env.FRONTEND_URL}/users/${newUser._id}/verify/${token.token}`;
+
+	await sendMail(
+		newUser.email,
+		"Email Verification for Xplore",
+		`Please click on this link to get verfied :\n${url}`
+	);
+
 	const resUser = await User.findById(newUser._id).select(
 		"-password -refreshToken"
 	);
 
 	return res
 		.status(200)
-		.json(new APIResponse(200, resUser, "User signed up successfully"));
+		.json(
+			new APIResponse(
+				200,
+				{ user: resUser },
+				`Verification link sent to your email : \n${newUser.email}`
+			)
+		);
+});
+
+export const verifyEmail = asyncHandler(async (req, res) => {
+	const { id: userId, token } = req.params;
+
+	const user = await User.findById(userId.toString());
+
+	if (!user) {
+		throw new APIError(404, "Invalid link");
+	}
+
+	const verifiedToken = await VerificationToken.findOne({ userId, token });
+
+	if (!verifiedToken) {
+		throw new APIError(404, "Invalid link");
+	}
+	let isVerified = verifiedToken.token == token;
+
+	let updatedUser = null;
+	if (isVerified) {
+		updatedUser = await User.findByIdAndUpdate(
+			userId,
+			{
+				verified: true,
+			},
+			{
+				new: true,
+			}
+		);
+	}
+
+	await VerificationToken.deleteOne({ _id: verifiedToken._id });
+
+	return res
+		.status(200)
+		.json(
+			new APIResponse(
+				200,
+				{ verifiedEmail: updatedUser?.email || null },
+				"Verified Successfully"
+			)
+		);
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -98,6 +144,38 @@ export const login = asyncHandler(async (req, res) => {
 
 	if (!isPasswordCorrect || !user) {
 		throw new APIError(400, "Invalid credential");
+	}
+
+	if (!user.verified) {
+		try {
+			let token = await VerificationToken.findOne({ userId: user._id });
+
+			if (!token) {
+				token = await VerificationToken.create({
+					userId: user._id,
+					token: crypto.randomBytes(32).toString("hex"),
+				});
+
+				const url = `${process.env.FRONTEND_URL}/users/${user._id}/verify/${token.token}`;
+
+				await sendMail(
+					newUser.email,
+					"Email Verification",
+					`Please click on this link to get verfied :\n${url}`
+				);
+			}
+			return res
+				.status(200)
+				.json(
+					new APIResponse(
+						200,
+						{},
+						`Verification link sent to your email : \n${user.email}`
+					)
+				);
+		} catch (error) {
+			console.log(error);
+		}
 	}
 
 	const { accessToken, refreshToken } =

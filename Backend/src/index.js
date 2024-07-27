@@ -25,11 +25,11 @@ app.use(cors({
 	optionsSuccessStatus: 200, //ok
 }))
 
-app.get("/", (req, res) => {
-	res.json({
-		message: "Hello",
-	});
-});
+// app.get("/", (req, res) => {
+// 	res.json({
+// 		message: "Hello",
+// 	});
+// });
 
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/users", userRoute);

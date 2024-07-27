@@ -5,7 +5,7 @@ import useFollow from "../../custom_hooks/useFollow.js";
 import LoadingSpinner from "./LoadingSpinner.jsx";
 import { useEffect } from "react";
 
-const RightPanel = () => {
+const RightPanel = ({ con = false }) => {
 	const { data: suggestedUsers, isLoading } = useQuery({
 		queryKey: ["suggestedUsers"],
 		queryFn: async () => {
@@ -38,7 +38,7 @@ const RightPanel = () => {
 	};
 
 	return (
-		<div className="hidden lg:block my-4 mx-2">
+		<div className={`${con ? "block" : "hidden"} lg:block my-4 mx-2`}>
 			<div className="bg-[#16181C] p-4 rounded-md sticky top-2">
 				<p className="font-bold">Who to follow</p>
 				<div className="flex flex-col gap-4">
@@ -55,11 +55,7 @@ const RightPanel = () => {
 					{!isLoading &&
 						suggestedUsers?.map((user) => (
 							<div className="flex items-center justify-between gap-4">
-								<Link
-									to={`/profile/${user?.username}`}
-									
-									key={user._id}
-								>
+								<Link to={`/profile/${user?.username}`} key={user._id}>
 									<div className="flex gap-2 items-center">
 										<div className="avatar">
 											<div className="w-8 rounded-full">

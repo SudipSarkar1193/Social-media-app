@@ -40,20 +40,21 @@ const RegisterPage = () => {
 				const resData = await res.json();
 				if (!res.ok)
 					throw new Error(resData.message || "Failed to create account");
+				return resData;
 			} catch (error) {
 				throw error;
 			}
 		},
-		onSuccess: () => {
-			toast.success("Signed up successfully");
+		onSuccess: (resData) => {
+			toast.success(resData.message);
 			setIsRegistered(true);
 		},
 		onError: (error) => {
-			console.error(error.message);
+			console.error(error);
 			toast.error(error.message);
 		},
 	});
-	
+
 	if (isRegistered) {
 		return <Navigate to="/" />;
 	}

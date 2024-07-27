@@ -24,7 +24,7 @@ export const authenticateUser = asyncHandler(async (req, res, next) => {
 		if (!verifiedToken) {
 			throw new APIError(401, "Unauthorized Request");
 		}
-		
+
 		const user = await User.findById(verifiedToken._id).select(
 			"_id username email profileImg username fullName"
 		);

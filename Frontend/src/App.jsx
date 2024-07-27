@@ -10,6 +10,7 @@ import ProfilePage from "./pages/profile/ProfilePage";
 import { toast, Toaster } from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import LoadingSpinner from "./components/common/LoadingSpinner";
+import EmailVerifyPage from "./pages/auth/EmailVerifyPage";
 // import "./index.css";
 
 const App = () => {
@@ -71,6 +72,7 @@ const App = () => {
 					path="/profile/:username"
 					element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
 				/>
+				<Route path="/users/:id/verify/:token" element={<EmailVerifyPage />} />
 			</Routes>
 
 			{authUser && <RightPanel />}

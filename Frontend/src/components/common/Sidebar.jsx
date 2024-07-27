@@ -7,6 +7,8 @@ import { Link } from "react-router-dom";
 import { BiLogOut } from "react-icons/bi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { IoIosPersonAdd } from "react-icons/io";
+import RightPanel from "./RightPanel";
 // import { IoMenu } from "react-icons/io5";
 
 const Sidebar = () => {
@@ -51,9 +53,61 @@ const Sidebar = () => {
 	const { data: authUser } = useQuery({ queryKey: ["userAuth"] });
 
 	return (
-		<>
-			<div className="md:flex md:flex-[2_2_0] md:w-18 md:max-w-52">
-				<div className="sticky top-0 left-0 h-screen flex flex-col border-r border-gray-700 w-20 md:w-full">
+		<div className="z-50 bg-red">
+			<dialog id="my_modal_2" className="modal">
+				<div className="modal-box">
+					<form method="dialog">
+						{/* if there is a button in form, it will close the modal */}
+						<button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+							✕
+						</button>
+					</form>
+					<RightPanel con={true} />
+				</div>
+			</dialog>
+			<div className="md:flex md:flex-[2_2_0] md:w-18 md:max-w-52 ">
+				{/* Mobile layout */}
+				<div className="fixed bottom-0 left-0 w-full md:hidden bg-black border-t border-gray-700 flex justify-around items-center py-2">
+					<Link
+						to="/"
+						className="flex gap-3 items-center hover:bg-secondary transition-all rounded-full py-2 px-4"
+					>
+						<MdHomeFilled className="w-6 h-6" />
+					</Link>
+					<Link
+						to="/notifications"
+						className="flex gap-3 items-center hover:bg-secondary transition-all rounded-full py-2 px-4"
+					>
+						<IoNotifications className="w-6 h-6" />
+					</Link>
+					<Link
+						to={`/profile/${authUser?.username}`}
+						className="flex gap-3 items-center hover:bg-secondary transition-all rounded-full py-2 px-4"
+					>
+						<FaUser className="w-6 h-6" />
+					</Link>
+
+					<span
+						className="flex gap-3 items-center hover:bg-secondary transition-all rounded-full py-2 px-4"
+						onClick={() => document.getElementById("my_modal_2").showModal()}
+					>
+						<IoIosPersonAdd size={30} />
+					</span>
+
+					{authUser && (
+						<div className="flex items-center gap-2">
+							<BiLogOut
+								className="w-5 h-5 cursor-pointer"
+								onClick={(e) => {
+									e.preventDefault();
+									logout();
+								}}
+							/>
+						</div>
+					)}
+				</div>
+
+				<div className="sticky top-0 left-0 h-screen lg:flex flex-col border-r border-gray-700 w-20 md:w-full hidden md:flex">
 					<Link to="/" className="flex justify-center md:justify-start">
 						<XSvg className="px-2 w-12 h-12 rounded-full fill-white hover:bg-secondary" />
 					</Link>
@@ -76,7 +130,6 @@ const Sidebar = () => {
 								<span className="text-lg hidden md:block">Notifications</span>
 							</Link>
 						</li>
-
 						<li className="flex justify-center md:justify-start">
 							<Link
 								to={`/profile/${authUser?.username}`}
@@ -86,6 +139,28 @@ const Sidebar = () => {
 								<span className="text-lg hidden md:block">Profile</span>
 							</Link>
 						</li>
+						<li>
+							<span
+								className="flex gap-3 items-center hover:bg-secondary transition-all rounded-full duration-300 py-2 pl-2 pr-4 max-w-fit cursor-pointer lg:hidden"
+								onClick={() =>
+									document.getElementById("my_modal_1").showModal()
+								}
+							>
+								<IoIosPersonAdd className="w-6 h-6" />
+								<span className="text-lg hidden md:block">Suggested Users</span>
+							</span>
+						</li>
+						<dialog id="my_modal_1" className="modal">
+							<div className="modal-box">
+								<form method="dialog">
+									{/* if there is a button in form, it will close the modal */}
+									<button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+										✕
+									</button>
+								</form>
+								<RightPanel con={true} />
+							</div>
+						</dialog>
 					</ul>
 					{authUser && (
 						<Link
@@ -96,6 +171,7 @@ const Sidebar = () => {
 								<div className="w-8 rounded-full">
 									<img
 										src={authUser?.profileImg || "/avatar-placeholder.png"}
+										alt="Profile"
 									/>
 								</div>
 							</div>
@@ -120,7 +196,7 @@ const Sidebar = () => {
 					)}
 				</div>
 			</div>
-		</>
+		</div>
 	);
 };
 export default Sidebar;

@@ -103,7 +103,7 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
 				_id: { $ne: _id, $nin: currentUser.following },
 			},
 		},
-		{ $sample: { size: 5 } }, // Randomly select 10 users
+		{ $sample: { size: 12} }, // Randomly select 10 users
 	]);
 
 	suggestions.forEach((user) => {

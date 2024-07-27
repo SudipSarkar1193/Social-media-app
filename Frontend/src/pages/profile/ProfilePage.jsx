@@ -26,10 +26,11 @@ const ProfilePage = () => {
 	const profileImgRef = useRef(null);
 
 	let { username } = useParams();
-	
 
 	const queryClient = useQueryClient();
 	const { followUnfollow, isPending: isPendingFollow } = useFollow();
+
+	const { data: posts } = useQuery({ queryKey: ["posts"] });
 
 	let {
 		data: user,
@@ -59,6 +60,7 @@ const ProfilePage = () => {
 
 	useEffect(() => {
 		userProfileRefecth();
+		//queryClient.invalidateQueries({ queryKey: ["posts"] });
 	}, [username, userProfileRefecth]);
 
 	const { data: authUser } = useQuery({ queryKey: ["userAuth"] });
@@ -68,7 +70,6 @@ const ProfilePage = () => {
 	const isFollowing = authUser?.following.includes(user?._id);
 
 	const followUnfollowHandler = (e) => {
-		
 		e.preventDefault();
 		followUnfollow(user._id);
 	};
@@ -103,7 +104,7 @@ const ProfilePage = () => {
 				{/* HEADER */}
 				{isLoading && <ProfileHeaderSkeleton />}
 
-				{ !isLoading && !user && (
+				{!isLoading && !user && (
 					<p className="text-center text-lg mt-4">User not found</p>
 				)}
 				<div className="flex flex-col ">
@@ -116,7 +117,7 @@ const ProfilePage = () => {
 								<div className="flex flex-col">
 									<p className="font-bold text-lg">{user?.fullName}</p>
 									<span className="text-sm text-slate-500">
-										{POSTS?.length} posts
+										{posts?.length} posts
 									</span>
 								</div>
 							</div>

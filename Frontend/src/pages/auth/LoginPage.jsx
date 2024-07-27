@@ -45,7 +45,6 @@ const LoginPage = () => {
 				});
 
 				const jsonRes = await res.json();
-				
 
 				if (!res.ok) {
 					throw new Error(jsonRes.message || "Failed to Log in");
@@ -55,7 +54,8 @@ const LoginPage = () => {
 				throw error;
 			}
 		},
-		onSuccess: () => {
+		onSuccess: (jsonRes) => {
+			toast.success(jsonRes.message)
 			queryClient.invalidateQueries({ queryKey: ["userAuth"] });
 			queryClient.invalidateQueries({ queryKey: ["suggestedUsers"] });
 		},
@@ -71,11 +71,10 @@ const LoginPage = () => {
 			...formData,
 			[e.target.name]: e.target.value,
 		});
-		
 	};
 
 	const handleSubmit = (e) => {
-		if(isPending) return;
+		if (isPending) return;
 		e.preventDefault();
 		login(formData);
 	};
@@ -104,7 +103,7 @@ const LoginPage = () => {
 						<input
 							type="text"
 							name="usernameOrEmail"
-							autocomplete="username"
+							autoComplete="username"
 							className="grow"
 							placeholder="Email or Username"
 							value={formData.usernameOrEmail}
@@ -118,11 +117,10 @@ const LoginPage = () => {
 							type={showPassword ? "text" : "password"}
 							name="password"
 							placeholder="Password"
-							autocomplete="new-password"
+							autoComplete="new-password"
 							className="grow"
 							value={formData.password}
 							onChange={handleInputChange}
-
 						/>
 						{showPassword ? (
 							<FaEye onClick={() => setShowPassword(false)} />
